@@ -33,11 +33,20 @@ class Application(tk.Frame):
         self.sidebar = tk.Frame(self)
         self.sidebar.pack(side='right')
 
+        methodLabel = tk.Label(self.sidebar, text='Interpolation Method')
+        methodLabel.pack()
+        optionList = ('nearest neighbor', 'bilinear', 'bicubic')
+        self.zoomMethod = tk.StringVar()
+        self.zoomMethod.set(optionList[0])
+        self.zoomMethodMenu = tk.OptionMenu(self.sidebar, self.zoomMethod, *optionList)
+        self.zoomMethodMenu.pack(fill='both')
+
         self.zoomRatioLabel = tk.Label(self.sidebar, text='Zoom')
         self.zoomRatioLabel.pack()
         self.zoomSpinbox = tk.Spinbox(self.sidebar)
-        self.zoomSpinbox.config( from_=0.2, to=4.0, increment=0.2)
+        self.zoomSpinbox.config(from_=0.2, to=4.0, increment=0.2)
         self.zoomSpinbox.pack()
+
 
         self.zoomButton = tk.Button(self.sidebar, text='Zoom', command=self.zoom)
         self.zoomButton.pack()
@@ -76,7 +85,7 @@ class Application(tk.Frame):
 
         self.canvas.delete(self._tmp_rect_id)
 
-        self._tmp_rect_id = self.canvas.create_rectangle(x0,y0,x1,y1)
+        self._tmp_rect_id = self.canvas.create_rectangle(x0, y0, x1, y1)
         self.selected = True
 
     def showTransformedImageWindow(self):
@@ -85,7 +94,8 @@ class Application(tk.Frame):
         # selected region
         region = self.canvas.coords(self._tmp_rect_id)
 
-        image = imtrans.zoom(self.image, region, self._zoomVal)
+        method = self.zoomMethod.get()
+        image = imtrans.zoom(self.image, region, self._zoomVal, interpolation=method)
 
         w, h = image.size
         photo = ImageTk.PhotoImage(image)
