@@ -95,7 +95,7 @@ class Application(tk.Frame):
         region = self.canvas.coords(self._tmp_rect_id)
 
         method = self.zoomMethod.get()
-        image = imtrans.zoom(self.image, region, self._zoomVal, interpolation=method)
+        image = imtrans.zoom(self.image, region, self._zoomVal, method=method)
 
         w, h = image.size
         photo = ImageTk.PhotoImage(image)
