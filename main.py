@@ -1,24 +1,22 @@
 #!/usr/bin/env python
 
 import Tkinter as tk
+from ttk import *
 import tkMessageBox
 import imtrans
 from PIL import Image, ImageTk
-class Application(tk.Frame):
+
+class ZoomFrame(Frame):
     def __init__(self, master=None):
-        tk.Frame.__init__(self, master)
+        Frame.__init__(self, master)
         self.selected = False
         self._tmp_rect_id = None
         self._zoomVal = tk.IntVar()
         self.grid()
         self.createWidgets()
-        
 
     def createWidgets(self):
-        screen_width = self.winfo_screenwidth()
-        screen_height = self.winfo_screenheight()
-
-        self.image = Image.open("kathmandu2.jpg")
+        self.image = Image.open("lena.jpg")
         w, h = self.image.size
         photo = ImageTk.PhotoImage(self.image)
         self.canvas = tk.Canvas(self, width=w, height=h)
@@ -30,7 +28,7 @@ class Application(tk.Frame):
 
         self.canvas.bind('<ButtonRelease-1>', self.on_button_release)
 
-        self.sidebar = tk.Frame(self)
+        self.sidebar = Frame(self)
         self.sidebar.pack(side='right')
 
         methodLabel = tk.Label(self.sidebar, text='Interpolation Method')
@@ -50,8 +48,6 @@ class Application(tk.Frame):
 
         self.zoomButton = tk.Button(self.sidebar, text='Zoom', command=self.zoom)
         self.zoomButton.pack()
-        self.quitButton = tk.Button(self.sidebar, text='Quit', command=self.quit)
-        self.quitButton.pack()
 
     def zoom(self):
         self._zoomVal = float(self.zoomSpinbox.get())
@@ -95,7 +91,7 @@ class Application(tk.Frame):
         region = self.canvas.coords(self._tmp_rect_id)
 
         method = self.zoomMethod.get()
-        image = imtrans.zoom(self.image, region, self._zoomVal, interpolation=method)
+        image = imtrans.zoom(self.image, region, self._zoomVal, method=method)
 
         w, h = image.size
         photo = ImageTk.PhotoImage(image)
@@ -103,6 +99,89 @@ class Application(tk.Frame):
         canvas.pack()
         canvas.create_image(w/2,h/2, image=photo)
         canvas.image = photo
+
+
+class RotateFrame(Frame):
+    def __init__(self, master=None):
+        Frame.__init__(self, master)
+        self._zoomVal = tk.IntVar()
+        self.grid()
+        self.createWidgets()
+
+    def createWidgets(self):
+        self.image = Image.open("sweden.jpeg")
+        w, h = self.image.size
+        photo = ImageTk.PhotoImage(self.image)
+        self.canvas = tk.Canvas(self, width=w, height=h)
+        self.canvas.pack(side='left')
+        self.canvas.create_image(w/2,h/2, image=photo)
+        self.canvas.image = photo
+       
+        self.sidebar = Frame(self)
+        self.sidebar.pack(side='right')
+
+        methodLabel = tk.Label(self.sidebar, text='Interpolation Method')
+        methodLabel.pack()
+        optionList = ('nearest neighbor', 'bilinear', 'bicubic')
+        self.smoothMethod = tk.StringVar()
+        self.smoothMethod.set(optionList[0])
+        self.smoothMethodMenu = tk.OptionMenu(self.sidebar, self.smoothMethod, *optionList)
+        self.smoothMethodMenu.pack(fill='both')
+
+        self.angleLabel = tk.Label(self.sidebar, text='Angle')
+        self.angleLabel.pack()
+        self.angleSpinbox = tk.Spinbox(self.sidebar)
+        self.angleSpinbox.config(from_=-45, to=45, increment=10)
+        self.angleSpinbox.pack()
+
+
+        self.rotateButton = tk.Button(self.sidebar, text='Rotate', command=self.zoom)
+        self.rotateButton.pack()
+
+    def zoom(self):
+        self._angleVal = float(self.angleSpinbox.get())
+        # find selected region here
+        self.showTransformedImageWindow()
+
+    def showTransformedImageWindow(self):
+        t = tk.Toplevel(self)
+        t.wm_title("Zoom: {}".format(self._zoomVal))
+        # selected region
+        method = self.smoothMethod.get()
+        #image = imtrans.zoom(self.image, region, self._zoomVal, interpolation=method)
+        image = imtrans.rotate(self.image, self._angleVal, method=method)
+        w, h = image.size
+        photo = ImageTk.PhotoImage(image)
+        canvas = tk.Canvas(t, width=w, height=h)
+        canvas.pack()
+        canvas.create_image(w/2,h/2, image=photo)
+        canvas.image = photo
+
+
+class Application(Frame):
+    def __init__(self, master=None):
+        Frame.__init__(self, master)
+        self.selected = False
+        self._tmp_rect_id = None
+        self._zoomVal = tk.IntVar()
+        self.grid()
+        self.createWidgets()
+        
+
+    def createWidgets(self):
+        screen_width = self.winfo_screenwidth()
+        screen_height = self.winfo_screenheight()
+
+        self.notebook = Notebook(self)
+
+        self.zoomFrame = ZoomFrame(self.notebook)
+        self.zoomFrame.pack()
+        self.rotateFrame = RotateFrame(self.notebook)
+        self.rotateFrame.pack()
+        self.notebook.add(self.zoomFrame, text='Zoom')
+        self.notebook.add(self.rotateFrame, text='Rotate')
+        self.notebook.pack()
+
 
 
 app =  Application()
