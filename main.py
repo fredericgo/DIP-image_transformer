@@ -109,7 +109,7 @@ class RotateFrame(Frame):
         self.createWidgets()
 
     def createWidgets(self):
-        self.image = Image.open("sweden.jpeg")
+        self.image = Image.open("kathmandu2.jpg")
         w, h = self.image.size
         photo = ImageTk.PhotoImage(self.image)
         self.canvas = tk.Canvas(self, width=w, height=h)

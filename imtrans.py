@@ -27,8 +27,9 @@ def BilinearInterpolator(block):
     return interpolator
 
 def BicubicInterpolator(p):
-    if p.size == 0: 
+    if p.size != 48: 
         return lambda x, y: np.array(255)
+
 
     a00 = p[1,1]
     a01 = -.5*p[1,0] + .5*p[1, 2];
@@ -47,7 +48,6 @@ def BicubicInterpolator(p):
     a32 = -.5*p[0,0] + 1.25*p[0,1] - p[0,2] + .25*p[0,3] + 1.5*p[1,0] - 3.75*p[1,1] + 3*p[1,2] - .75*p[1,3] - 1.5*p[2,0] + 3.75*p[2,1] - 3*p[2,2] + .75*p[2,3] + .5*p[3,0] - 1.25*p[3,1] + p[3,2] - .25*p[3,3];
     a33 = .25*p[0,0] - .75*p[0,1] + .75*p[0,2] - .25*p[0,3] - .75*p[1,0] + 2.25*p[1,1] - 2.25*p[1,2] + .75*p[1,3] + .75*p[2,0] - 2.25*p[2,1] + 2.25*p[2,2] - .75*p[2,3] - .25*p[3,0] + .75*p[3,1] - .75*p[3,2] + .25*p[3,3];
 
-
     def interpolator(xnew, ynew):
         
         x = xnew
@@ -58,10 +58,12 @@ def BicubicInterpolator(p):
         y2 = y * y
         y3 = y2 * y
 
-        return (a00 + a01 * y + a02 * y2 + a03 * y3) +\
+        f = (a00 + a01 * y + a02 * y2 + a03 * y3) +\
                (a10 + a11 * y + a12 * y2 + a13 * y3) * x +\
                (a20 + a21 * y + a22 * y2 + a23 * y3) * x2 +\
                (a30 + a31 * y + a32 * y2 + a33 * y3) * x3
+        return np.clip(f, 0, 255)
+
 
     return interpolator
 
@@ -109,7 +111,7 @@ def zoom(image, region, ratio, method='bilinear'):
             #print i,j, x, y
             new_img[i, j] = interpolator[method](img[ymin:ymax, xmin:xmax].astype(np.float64))(ynew-int(ynew), xnew-int(xnew))
 
-        new_img = np.clip(new_img, 0, 255)
+    new_img = np.clip(new_img, 0, 255)
     # convert i, j (new coordinates) to old coordinates
 
     #if interpolation != "bicubic":
@@ -161,26 +163,31 @@ def rotate(image, angle, method="bicubic"):
     y = np.arange(h)
     
     coords = [[i,j] for i in x for j in y]
-    rot = -2 * np.pi * angle / 360
+    rot = np.pi * angle / 180
 
     for i, j in coords:
-            xnew = np.cos(rot) * i - np.sin(rot) * j
-            ynew = np.sin(rot) * i + np.cos(rot) * j
-            if xnew < 0 or xnew + 1 >= w or ynew < 0 or ynew + 1 >= h:
+            xnew = np.cos(rot) * i + np.sin(rot) * j
+            ynew = -np.sin(rot) * i + np.cos(rot) * j
+            if xnew < 0 or w - xnew < 2 or ynew < 0 or h - ynew < 2:
                 new_img[i,j] = 255
             else:
                 if method != "bicubic":
                     xmin, xmax = int(xnew), int(xnew) + 2
                     ymin, ymax = int(ynew), int(ynew) + 2
                 else:
-                    xmin, xmax = int(xnew) - 2, int(xnew) + 2
-                    ymin, ymax = int(ynew) - 2, int(ynew) + 2
-                
-                #if xmin < 0 or xmax > w or ymin < 0 or ymax > h:
-                #    new_img[i, j] = 0
-                #    continue
-               
-                new_img[i, j] = interpolator[method](img[xmin:xmax, ymin:ymax].astype(np.float64))(xnew-int(xnew), ynew-int(ynew))
+                    xmin, xmax = int(xnew) - 1, int(xnew) + 3
+                    ymin, ymax = int(ynew) - 1, int(ynew) + 3
+                    if xnew < 2:
+                        xmin = xnew
+                    if w - xnew < 2 :
+                        xmax = xnew
+                    if ynew < 2:
+                        ymin = ymax
+                    if h - ynew < 2:
+                        ymax = ynew
+
+                neighbors = img[xmin:xmax, ymin:ymax].astype(np.float64)
+                new_img[i, j] = interpolator[method](neighbors)(xnew-int(xnew), ynew-int(ynew))
     new_img = np.clip(new_img, 0, 255)
     return Image.fromarray(new_img.astype(np.uint8))
 
