@@ -16,7 +16,7 @@ class ZoomFrame(Frame):
         self.createWidgets()
 
     def createWidgets(self):
-        self.image = Image.open("lena.jpg")
+        self.image = Image.open("kathmandu.jpg")
         w, h = self.image.size
         photo = ImageTk.PhotoImage(self.image)
         self.canvas = tk.Canvas(self, width=w, height=h)
@@ -105,7 +105,7 @@ class RotateFrame(Frame):
     def __init__(self, master=None):
         Frame.__init__(self, master)
         self._zoomVal = tk.IntVar()
-        self.grid()
+        self.pack()
         self.createWidgets()
 
     def createWidgets(self):
@@ -135,10 +135,10 @@ class RotateFrame(Frame):
         self.angleSpinbox.pack()
 
 
-        self.rotateButton = tk.Button(self.sidebar, text='Rotate', command=self.zoom)
+        self.rotateButton = tk.Button(self.sidebar, text='Rotate', command=self.rotate)
         self.rotateButton.pack()
 
-    def zoom(self):
+    def rotate(self):
         self._angleVal = float(self.angleSpinbox.get())
         # find selected region here
         self.showTransformedImageWindow()
@@ -164,16 +164,14 @@ class Application(Frame):
         self.selected = False
         self._tmp_rect_id = None
         self._zoomVal = tk.IntVar()
-        self.grid()
+        self.pack()
         self.createWidgets()
         
 
     def createWidgets(self):
         screen_width = self.winfo_screenwidth()
         screen_height = self.winfo_screenheight()
-
         self.notebook = Notebook(self)
-
         self.zoomFrame = ZoomFrame(self.notebook)
         self.zoomFrame.pack()
         self.rotateFrame = RotateFrame(self.notebook)

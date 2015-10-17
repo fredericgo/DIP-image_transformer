@@ -30,7 +30,8 @@ def BicubicInterpolator(p):
     if p.size != 48: 
         return lambda x, y: np.array(255)
 
-
+    # from neighbors to coefficients 
+    # http://www.paulinternet.nl/?page=bicubic
     a00 = p[1,1]
     a01 = -.5*p[1,0] + .5*p[1, 2];
     a02 = p[1, 0] - 2.5 * p[1, 1] + 2 * p[1, 2] - .5 * p[1, 3];
@@ -48,11 +49,7 @@ def BicubicInterpolator(p):
     a32 = -.5*p[0,0] + 1.25*p[0,1] - p[0,2] + .25*p[0,3] + 1.5*p[1,0] - 3.75*p[1,1] + 3*p[1,2] - .75*p[1,3] - 1.5*p[2,0] + 3.75*p[2,1] - 3*p[2,2] + .75*p[2,3] + .5*p[3,0] - 1.25*p[3,1] + p[3,2] - .25*p[3,3];
     a33 = .25*p[0,0] - .75*p[0,1] + .75*p[0,2] - .25*p[0,3] - .75*p[1,0] + 2.25*p[1,1] - 2.25*p[1,2] + .75*p[1,3] + .75*p[2,0] - 2.25*p[2,1] + 2.25*p[2,2] - .75*p[2,3] - .25*p[3,0] + .75*p[3,1] - .75*p[3,2] + .25*p[3,3];
 
-    def interpolator(xnew, ynew):
-        
-        x = xnew
-        y = ynew
-        
+    def interpolator(x, y):
         x2 = x * x
         x3 = x2 * x
         y2 = y * y
@@ -63,8 +60,6 @@ def BicubicInterpolator(p):
                (a20 + a21 * y + a22 * y2 + a23 * y3) * x2 +\
                (a30 + a31 * y + a32 * y2 + a33 * y3) * x3
         return np.clip(f, 0, 255)
-
-
     return interpolator
 
 
@@ -108,45 +103,14 @@ def zoom(image, region, ratio, method='bilinear'):
             new_img[i, j] = 0
             continue
         else:
-            #print i,j, x, y
-            new_img[i, j] = interpolator[method](img[ymin:ymax, xmin:xmax].astype(np.float64))(ynew-int(ynew), xnew-int(xnew))
-
+            # do interpolation here
+            neighbors = img[ymin:ymax, xmin:xmax].astype(np.float64)
+            new_img[i, j] = interpolator[method](neighbors)(ynew-int(ynew), xnew-int(xnew))
+    # numpy will do somthing nasty: if over 255, the value becomes negative ><
     new_img = np.clip(new_img, 0, 255)
-    # convert i, j (new coordinates) to old coordinates
-
-    #if interpolation != "bicubic":
-        
-    #    for i in range(int(NNx)):
-    #        for j in range(int(NNy)):
-    #            new_img[j, i] = interpolate(x0 + i / ratio, y0 + j / ratio)
-    #else:
-    #    img = img[y0:y1, x0:x1]
-    #    w, h, _ = img.shape
-    #    x = np.arange(w)
-    #    y = np.arange(h)
-    #    R = interp2d(y, x, img[:,:,0], kind="cubic")
-    #    G = interp2d(y, x, img[:,:,1], kind="cubic")
-    #    B = interp2d(y, x, img[:,:,2], kind="cubic")
-
-
-    #    xnew = np.arange(0, w, 1/ratio)
-    #    ynew = np.arange(0, h, 1/ratio)
-    #    new_img[:,:,0] = R(ynew, xnew)
-    #    new_img[:,:,1] = G(ynew, xnew)
-    #    new_img[:,:,2] = B(ynew, xnew)
-        # sometimes the interpolation algorithm produces out of range data,
-        # we must clip them 
-    #    new_img = np.clip(new_img, 0, 255)
-
-    return Image.fromarray(new_img.astype(np.uint8))
-
-def crop(image, region):
-    img = np.array(image)
-    x0, y0, x1, y1 = region
-    print region
-    Nx, Ny, _ = img.shape
-    return Image.fromarray(img[y0:y1, x0:x1])
-
+    image = Image.fromarray(new_img.astype(np.uint8))
+    image.save("zoom"+method + ".jpg", "jpeg")
+    return image
 
 def rotate(image, angle, method="bicubic"):
     interpolator = {
@@ -188,6 +152,8 @@ def rotate(image, angle, method="bicubic"):
 
                 neighbors = img[xmin:xmax, ymin:ymax].astype(np.float64)
                 new_img[i, j] = interpolator[method](neighbors)(xnew-int(xnew), ynew-int(ynew))
-    new_img = np.clip(new_img, 0, 255)
-    return Image.fromarray(new_img.astype(np.uint8))
+    image = Image.fromarray(new_img.astype(np.uint8))
+    image.save("rotate"+method + ".jpg", "jpeg")
+    return image
+
 
